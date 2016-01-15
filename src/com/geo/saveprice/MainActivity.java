@@ -41,6 +41,7 @@ public class MainActivity extends Activity implements OnClickListener{
 	public static final String DEFAULT_SOURCE_LANGUAGE_CODE = "eng+ell";
 	private static final int CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE = 100;
 	private static final int HELP_ACTIVITY_REQUEST_CODE = 101;
+	private static final int MANUAL_ADD_ACTIVITY_REQUEST_CODE = 102;
 	private final int CLASS_CODE = 0;
 	
 	/** Resource to use for data file downloads. */
@@ -54,7 +55,7 @@ public class MainActivity extends Activity implements OnClickListener{
 	private static final String TAG = "MainActivity";
 	
 	// Objects
-	private Button ocrButton, reOcrButton, serverButton, deleteButton;
+	private Button ocrButton, reOcrButton, serverButton, deleteButton, manualAddButton;
 	private boolean reOcrButtonPressed = false;
 	private EditText ocrResult;
 	private View progressBar;
@@ -75,7 +76,7 @@ public class MainActivity extends Activity implements OnClickListener{
 	
 	private static boolean isFirstLaunch;
 	
-	private Intent captureIntent;
+	private Intent captureIntent, manualAddIntent;
 	private OcrAsyncTask aTask;
 	private static int photoCounter;
 	
@@ -128,6 +129,9 @@ public class MainActivity extends Activity implements OnClickListener{
         
         deleteButton = (Button) findViewById(R.id.button4);
         deleteButton.setOnClickListener((android.view.View.OnClickListener) this);
+        
+        manualAddButton = (Button) findViewById(R.id.button5);
+        manualAddButton.setOnClickListener((android.view.View.OnClickListener) this);
         
         dialog = new ProgressDialog(this);
         
@@ -344,6 +348,10 @@ public class MainActivity extends Activity implements OnClickListener{
 			ocrResult.setText("");
 			MyProducts.getProducts().clear();
 			MyProducts.getOldProducts().clear();
+		}else if(v.getId() == R.id.button5){ //MANUAL ADD Button
+			manualAddIntent = new Intent(MainActivity.this, ManualAddActivity.class);
+			startActivityForResult(manualAddIntent, MANUAL_ADD_ACTIVITY_REQUEST_CODE);
+			
 		}
 	}
 	
