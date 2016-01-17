@@ -351,7 +351,7 @@ public class MainActivity extends Activity implements OnClickListener{
 		}else if(v.getId() == R.id.button5){ //MANUAL ADD Button
 			manualAddIntent = new Intent(MainActivity.this, ManualAddActivity.class);
 			startActivityForResult(manualAddIntent, MANUAL_ADD_ACTIVITY_REQUEST_CODE);
-			
+			//startActivity(manualAddIntent);
 		}
 	}
 	

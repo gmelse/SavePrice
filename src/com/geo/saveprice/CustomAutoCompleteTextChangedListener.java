@@ -1,10 +1,14 @@
 package com.geo.saveprice;
 
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.List;
 
+import org.apache.http.NameValuePair;
 import org.json.JSONException;
 
 import android.content.Context;
+import android.os.AsyncTask;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -39,30 +43,24 @@ public class CustomAutoCompleteTextChangedListener implements TextWatcher{
         // TODO Auto-generated method stub
          
     }
- 
+    
     @Override
     public void onTextChanged(CharSequence userInput, int start, int before, int count) {
  
         // if you want to see in the logcat what the user types
         Log.e(TAG, "User input: " + userInput);
  
+        //MainActivity mainActivity = ((MainActivity) context);
         ManualAddActivity amaActivity = ((ManualAddActivity) context);
          
-        try {
-			amaActivity.item = amaActivity.getItemsFromDb(userInput.toString());
-		} catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (UnsupportedEncodingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+        // query the database based on the user input
+        amaActivity.item = amaActivity.getItemsFromDb(userInput.toString());
          
         // update the adapater
         amaActivity.myAdapter.notifyDataSetChanged();
         amaActivity.myAdapter = new ArrayAdapter<String>(amaActivity, android.R.layout.simple_dropdown_item_1line, amaActivity.item);
-        amaActivity.textView.setAdapter(amaActivity.myAdapter);
+        amaActivity.myAutoComplete.setAdapter(amaActivity.myAdapter);
          
     }
- 
+    
 }

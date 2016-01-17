@@ -1,36 +1,63 @@
 package com.geo.saveprice;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
+import org.apache.http.ParseException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.ProgressDialog;
+import android.content.Context;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.StrictMode;
 import android.util.Log;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
+import android.widget.EditText;
+import android.widget.ListAdapter;
+import android.widget.SimpleAdapter;
+import android.widget.Toast;
 
 public class ManualAddActivity extends Activity{
 	
-	private static String url_get_products = "http://213.16.150.49/androidserver/Test/getAllProducts.php";
+	private static String url_get_products = "http://46.12.52.5/androidserver/getAllProducts.php";
 	
-	// JSON Node names
-    //private static final String TAG_SUCCESS = "success";
+	// Progress Dialog
+    private ProgressDialog pDialog;
+    
+	// Creating JSON Parser object
+    JSONParser jParser = new JSONParser();
+	
+    // JSON Node names
+    private static final String TAG_SUCCESS = "success";
     private static final String TAG_PRODUCTS = "products";
+    private static final String TAG_PID = "pid";
     private static final String TAG_NAME = "name";
-	
-	JSONParser jsonParser = new JSONParser();
+
     JSONArray products = null;
 	
 	ArrayAdapter<String> myAdapter;
-	AutoCompleteTextView textView;
+	CustomAutoCompleteView myAutoComplete;
 	
 	//Initial value in the TextField
     String[] item = new String[] {"Type a product..."};
@@ -41,86 +68,124 @@ public class ManualAddActivity extends Activity{
        super.onCreate(savedInstanceState);    
        setContentView(R.layout.manual_add_layout);
        
-       StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
-       StrictMode.setThreadPolicy(policy);
-       
-       // autocompletetextview is in activity_main.xml
-       //myAutoComplete = (CustomAutoCompleteView) findViewById(R.id.myautocomplete);
-       textView = (AutoCompleteTextView) findViewById(R.id.productsList);
-        
-       // add the listener so it will tries to suggest while the user types
-       textView.addTextChangedListener(new CustomAutoCompleteTextChangedListener(this));
-        
-       // set our adapter
-       //myAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_dropdown_item_1line, COUNTRIES);
-       //myAutoComplete.setAdapter(myAdapter);
-       myAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_dropdown_item_1line, item);
-       textView.setAdapter(myAdapter);
-       
-       
-   }
-
-   /*private static final String[] COUNTRIES = new String[] {
-       "Belgium", "France", "Italy", "Germany", "Spain"
-   };*/
-
-// this function is used in CustomAutoCompleteTextChangedListener.java
-   public String[] getItemsFromDb(String searchTerm) throws JSONException, UnsupportedEncodingException{
-        
-	   // Building Parameters
-       List<NameValuePair> params = new ArrayList<NameValuePair>();
-       byte[] data = searchTerm.getBytes("UTF-8");
-		String base64 = Base64.encodeBytes(data);
-		
-		params.add(new BasicNameValuePair("searchTerm", base64 ));
-       
-       //params.add(new BasicNameValuePair("searchTerm", searchTerm));
-
-       // getting JSON Object
-       // Note that create product url accepts POST method
-       JSONObject json = jsonParser.makeHttpRequest(url_get_products, "POST", params);
-       products = json.getJSONArray(TAG_PRODUCTS);
-       
-       Log.v(TAG_NAME, "Products Got it");
-       
-       String[] item = new String[products.length()];
-       
-       // looping through All Products
-       for (int i = 0; i < products.length(); i++) {
-           JSONObject c = products.getJSONObject(i);
-
-           // Storing each json item in variable
-           String name = c.getString(TAG_NAME);
-           item[i] = name;
-           Log.v(TAG_NAME, "Product now is: " + name);
-           // creating new HashMap
-           //HashMap<String, String> map = new HashMap<String, String>();
-
-           // adding each child node to HashMap key => value
-           /*map.put(TAG_PID, id);
-           map.put(TAG_NAME, name);
-
-           // adding HashList to ArrayList
-           productsList.add(map);*/
+      // StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+      // StrictMode.setThreadPolicy(policy);
+       try{
+	       // autocompletetextview is in activity_main.xml
+	       myAutoComplete = (CustomAutoCompleteView) findViewById(R.id.productsList);
+	        
+	       // add the listener so it will tries to suggest while the user types
+	       myAutoComplete.addTextChangedListener(new CustomAutoCompleteTextChangedListener(this));
+	        
+	       // set our adapter
+	       myAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_dropdown_item_1line, item);
+	       myAutoComplete.setAdapter(myAdapter);
+       } catch (NullPointerException e) {
+           e.printStackTrace();
+       } catch (Exception e) {
+           e.printStackTrace();
        }
-	   
-       // add items on the array dynamically
-       /*List<MyObject> products = databaseH.read(searchTerm);
-       int rowCount = products.size();
-        
-       String[] item = new String[rowCount];
-       int x = 0;
-        
-       for (MyObject record : products) {
-            
-           item[x] = record.objectName;
-           x++;
-       }*/
-        
-       return item;
+       
+       
    }
 	
-	
-	
+	// this function is used in CustomAutoCompleteTextChangedListener.java
+    public String[] getItemsFromDb(String searchTerm){
+         
+        // add items on the array dynamically
+        /*List<MyObject> products = databaseH.read(searchTerm);
+        int rowCount = products.size();
+         
+        String[] item = new String[rowCount];
+        int x = 0;
+         
+        for (MyObject record : products) {
+             
+            item[x] = record.objectName;
+            x++;
+        }*/
+    	
+    	new LoadAllProducts().execute(searchTerm);
+        
 
+    	String[] item = new String[] {"Belgium", "France", "Italy", "Germany", "Spain"};
+    	
+        return item;
+    }
+    /**
+     * Background Async Task to Load all product by making HTTP Request
+     * */
+    class LoadAllProducts extends AsyncTask<String, String, String> {
+    	
+        /**
+         * Before starting background thread Show Progress Dialog
+         * */
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            pDialog = new ProgressDialog(ManualAddActivity.this);
+            pDialog.setMessage("Loading products. Please wait...");
+            pDialog.setIndeterminate(false);
+            pDialog.setCancelable(false);
+            pDialog.show();
+        }
+ 
+        /**
+         * getting All products from url
+         * */
+        protected String doInBackground(String... args) {
+            // Building Parameters
+            List<NameValuePair> params = new ArrayList<NameValuePair>();
+            // getting JSON string from URL
+            JSONObject json = jParser.makeHttpRequest(url_get_products, "GET", params);
+ 
+            // Check your log cat for JSON reponse
+            Log.d("All Products: ", json.toString());
+ 
+            try {
+                // Checking for SUCCESS TAG
+                int success = json.getInt(TAG_SUCCESS);
+ 
+                if (success == 1) {
+                    // products found
+                    // Getting Array of Products
+                    products = json.getJSONArray(TAG_PRODUCTS);
+ 
+                    // looping through All Products
+                    for (int i = 0; i < products.length(); i++) {
+                        JSONObject c = products.getJSONObject(i);
+ 
+                        // Storing each json item in variable
+                        String name = c.getString(TAG_NAME);
+                        
+                        Log.v(TAG_NAME, "Product" + i + ":" + name);
+ 
+                    }
+                } else {
+                    // no products found
+                	Log.v(TAG_NAME, "No products!");
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+ 
+            return null;
+        }
+        
+        @Override
+        protected void onProgressUpdate(String... values) {
+        	
+        }
+ 
+        /**
+         * After completing background task Dismiss the progress dialog
+         * **/
+        protected void onPostExecute(String file_url) {
+            // dismiss the dialog after getting all products
+            pDialog.dismiss();
+           
+ 
+        }
+ 
+    }
 }
